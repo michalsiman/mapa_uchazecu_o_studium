@@ -1,14 +1,17 @@
 # Mapa uchazečů o studium
 
-Tato aplikace je napsaná v Pythonu a slouží k zobrazení uchazečů o střední školu na mapě České republiky.
+Tato aplikace je napsaná v Pythonu a slouží k vizualizaci uchazečů o střední školu na mapě a následně ke generování reportů / statistik.
 
 ## Vlastnosti
 
-- nahrání CSV souboru s řádky ve formátu `ADRESA,PSČ,POČET_UCHAZEČŮ`
+- import souboru generovaného ze systému DiPSy (https://dipsy.gov.cz/)
 - uložení nahraných souborů do lokálního pracovního adresáře
 - seznam nahraných souborů s možností jejich smazání
 - interaktivní mapové zobrazení s klastrováním bodů
 - popisky zobrazují adresu, PSČ a počet uchazečů
+- možnost zobrazit na mapě data z více souborů (z více ročníků)
+- filtrování podle oborů a priorit
+- generování reportů (statistik) z vybraných souborů
 
 ## Instalace
 
@@ -65,10 +68,13 @@ Po dokončení najdete výsledný soubor `main.exe` v podadresáři `dist\main`.
 
 ## Použití
 
-- stiskněte tlačítko `Vybrat a nahrát CSV soubor`
-- vyberte soubor s adresami, PSČ a počty uchazečů
+- do souboru config.ini doplňte název a adresu Vaší školy
+- stiskněte tlačítko `Import DiPSy souboru`
+- vyberte soubor exportovaný z DiPSy
 - okno v pravé části zobrazí mapu České republiky s body a skupinami bodů
 - kliknutím na bod se zobrazí detail záznamu
+- rozkliknutím "Filtr oborů" nebo "Filtr priorit" změňte zobrazení na mapě
+- tlačítkem "Generovat report" vygenerujte report
 
 ## Poznámky
 
