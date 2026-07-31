@@ -1,0 +1,19 @@
+# Local storage
+/storage/
+
+# Local configuration with school address
+/config.ini
+
+# Local or sample applicant data
+/*.csv
+/vzor_dat_z_dips.csv
+
+# Python virtual environment
+.venv/
+__pycache__/
+*.pyc
+
+# Build outputs
+/build/
+/dist/
+*.spec
