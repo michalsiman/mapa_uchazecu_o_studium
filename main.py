@@ -1,3 +1,8 @@
+# Projekt: Mapa uchazečů o studium
+# Autor: Michal Šiman (OK1SIM)
+# Github: https://github.com/michalsiman/mapa_uchazecu_o_studium
+# Verze: 1.0
+# 
 import configparser
 import csv
 import hashlib
