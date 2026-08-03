@@ -462,20 +462,39 @@ class DataStorage:
 
         return candidates
 
+    def _primary_name_part(self, address: str) -> str:
+        parts = [part.strip() for part in (address or "").split(",") if part.strip()]
+        if not parts:
+            return ""
+
+        primary = self._normalize_text_for_match(parts[0])
+        if not primary or re.search(r"\d", primary):
+            return ""
+        return primary
+
     def _resolve_home_school_alias_location(self, address: str, psc: str) -> tuple[float, float] | None:
         if not self.home_school_address:
             return None
 
         requested_candidates = self._address_street_candidates(address)
         home_candidates = self._address_street_candidates(self.home_school_address)
-        if not requested_candidates or not home_candidates:
-            return None
-        if requested_candidates.isdisjoint(home_candidates):
+        street_match = bool(requested_candidates and home_candidates and not requested_candidates.isdisjoint(home_candidates))
+
+        requested_primary = self._primary_name_part(address)
+        home_primary = self._primary_name_part(self.home_school_address)
+        name_match = False
+        if requested_primary and home_primary:
+            if requested_primary == home_primary:
+                name_match = True
+            elif min(len(requested_primary), len(home_primary)) >= 8:
+                name_match = requested_primary in home_primary or home_primary in requested_primary
+
+        if not street_match and not name_match:
             return None
 
         requested_psc = self._extract_postal_code(psc) or self._extract_postal_code(address)
         home_psc = self._extract_postal_code(self.home_school_address)
-        if not requested_psc or not home_psc or requested_psc != home_psc:
+        if requested_psc and home_psc and requested_psc != home_psc:
             return None
 
         return self.lookup_query(self.home_school_address)
@@ -779,11 +798,49 @@ class DataStorage:
         if key in self.location_cache:
             return tuple(self.location_cache[key])
 
-        full_query = query if "," in query else f"{query}, Czech Republic"
-        try:
-            location = self.geocode(full_query, exactly_one=True, timeout=10)
-        except Exception:
-            location = None
+        query_text = str(query or "").strip()
+        if not query_text:
+            return None
+
+        query_parts = [part.strip() for part in query_text.split(",") if part.strip()]
+        has_country = self._normalize_text_for_match(query_text).find("czech") >= 0
+        has_country = has_country or self._normalize_text_for_match(query_text).find("cesko") >= 0
+
+        queries: list[str] = [query_text]
+        if not has_country:
+            queries.append(f"{query_text}, Czech Republic")
+
+        if len(query_parts) >= 2:
+            tail = ", ".join(query_parts[1:])
+            queries.append(tail)
+            if not has_country:
+                queries.append(f"{tail}, Czech Republic")
+
+        if len(query_parts) >= 3:
+            city = query_parts[1]
+            street = query_parts[2]
+            reordered = f"{street}, {city}"
+            queries.append(reordered)
+            if not has_country:
+                queries.append(f"{reordered}, Czech Republic")
+
+        unique_queries: list[str] = []
+        seen_queries: set[str] = set()
+        for candidate in queries:
+            normalized_candidate = candidate.strip().lower()
+            if not normalized_candidate or normalized_candidate in seen_queries:
+                continue
+            seen_queries.add(normalized_candidate)
+            unique_queries.append(candidate)
+
+        location = None
+        for candidate in unique_queries:
+            try:
+                location = self.geocode(candidate, exactly_one=True, timeout=10)
+            except Exception:
+                location = None
+            if location is not None:
+                break
 
         if location is not None:
             coords = (location.latitude, location.longitude)
