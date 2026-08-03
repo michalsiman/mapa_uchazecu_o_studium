@@ -39,6 +39,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QPushButton,
     QProgressDialog,
+    QToolButton,
     QVBoxLayout,
     QWidget,
 )
@@ -60,7 +61,7 @@ CONFIG_FILE = BASE_DIR / "config.ini"
 MAP_FILE = STORAGE_DIR / "map.html"
 REPORTS_DIR = STORAGE_DIR / "reports"
 UPDATES_DIR = STORAGE_DIR / "updates"
-APP_VERSION = "1.0"
+APP_VERSION = "1.01"
 APP_YEAR = "2026"
 APP_GITHUB_URL = "https://github.com/michalsiman/mapa_uchazecu_o_studium"
 
@@ -1348,6 +1349,18 @@ class MainWindow(QMainWindow):
 
         self.import_dips_button = QPushButton("Import DiPSy souboru")
         self.import_dips_button.clicked.connect(self.import_dips_file)
+        self.import_info_button = QToolButton()
+        self.import_info_button.setText("i")
+        self.import_info_button.setToolTip("Lorem ipsum dolor sit amet.")
+        self.import_info_button.setCursor(Qt.PointingHandCursor)
+        self.import_info_button.setFixedSize(22, 22)
+        self.import_info_button.setStyleSheet(
+            "QToolButton {"
+            "background-color:#f1f4f8; color:#3f4f64; border:1px solid #c8d1dc; border-radius:11px; font-weight:700;"
+            "}"
+            "QToolButton:hover { background-color:#e5ebf2; }"
+            "QToolButton:pressed { background-color:#d9e2ec; }"
+        )
 
         self.obor_filter_toggle_button = QPushButton("Filtr oborů [+]")
         self.obor_filter_toggle_button.setCheckable(True)
@@ -1451,7 +1464,13 @@ class MainWindow(QMainWindow):
         self.school_info_label.setWordWrap(True)
         self.school_info_label.setStyleSheet("color:#4a2f2f; background:#fff4f4; border:1px solid #edcdcd; padding:8px; border-radius:8px; margin-bottom:10px;")
         side_layout.addWidget(self.school_info_label)
-        side_layout.addWidget(self.import_dips_button)
+        import_controls_row = QWidget()
+        import_controls_layout = QHBoxLayout(import_controls_row)
+        import_controls_layout.setContentsMargins(0, 0, 0, 0)
+        import_controls_layout.setSpacing(6)
+        import_controls_layout.addWidget(self.import_dips_button, 1)
+        import_controls_layout.addWidget(self.import_info_button, 0, Qt.AlignVCenter)
+        side_layout.addWidget(import_controls_row)
         side_layout.addWidget(self.obor_filter_toggle_button)
         side_layout.addWidget(self.obor_filter_section)
         side_layout.addWidget(self.priority_filter_toggle_button)
