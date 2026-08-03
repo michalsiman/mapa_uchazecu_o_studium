@@ -194,7 +194,7 @@ class DataStorage:
 
         raw = getattr(location, "raw", None)
         if not isinstance(raw, dict):
-            return True
+            return False
 
         postcode_candidates: list[str] = []
         address_part = raw.get("address")
@@ -208,7 +208,7 @@ class DataStorage:
             postcode_candidates.extend(re.findall(r"\b\d{3}\s?\d{2}\b", display_name))
 
         if not postcode_candidates:
-            return True
+            return False
 
         normalized_candidates = {
             self._normalize_postal_code(candidate)
@@ -216,6 +216,23 @@ class DataStorage:
             if self._normalize_postal_code(candidate)
         }
         return requested_psc in normalized_candidates
+
+    def _lookup_postal_code_centroid(self, requested_psc: str) -> tuple[float, float] | None:
+        if not requested_psc:
+            return None
+
+        try:
+            location = self.geocode(f"{requested_psc}, Czech Republic", exactly_one=True, timeout=10)
+        except Exception:
+            location = None
+
+        if location is None:
+            return None
+
+        if not self._location_matches_postal_code(location, requested_psc):
+            return None
+
+        return (location.latitude, location.longitude)
 
     def _file_hash(self, path: Path) -> str:
         h = hashlib.sha256()
@@ -791,6 +808,13 @@ class DataStorage:
             self.location_cache[key] = coords
             self._save_cache()
             return coords
+
+        # Pokud se nepodaří geokódovat adresu, použije se střed oblasti dle PSČ.
+        centroid = self._lookup_postal_code_centroid(requested_psc)
+        if centroid is not None:
+            self.location_cache[key] = centroid
+            self._save_cache()
+            return centroid
 
         return None
 
