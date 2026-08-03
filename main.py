@@ -2360,10 +2360,9 @@ class MainWindow(QMainWindow):
         base_message = self._progress_message or "Zpracovávám data..."
         if self._progress_total > 0:
             current = max(0, min(self._progress_current, self._progress_total))
-            percent = int((current / self._progress_total) * 100)
             self.progress_dialog.setRange(0, self._progress_total)
             self.progress_dialog.setValue(current)
-            self.progress_dialog.setLabelText(f"{base_message}\n{current}/{self._progress_total} ({percent} %)" )
+            self.progress_dialog.setLabelText(f"{base_message}\n{current}/{self._progress_total}")
         else:
             self.progress_dialog.setRange(0, 0)
             self.progress_dialog.setLabelText(base_message)
