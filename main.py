@@ -2363,8 +2363,17 @@ class MainWindow(QMainWindow):
         selected_priorities: list[str] | None = None,
         force_cache_refresh: bool = False,
     ) -> None:
-        if hasattr(self, 'worker_thread') and getattr(self, 'worker_thread', None) is not None:
-            return
+        if hasattr(self, 'worker_thread'):
+            existing_thread = getattr(self, 'worker_thread', None)
+            if existing_thread is not None:
+                try:
+                    if existing_thread.isRunning():
+                        self.set_status("Aktualizace už probíhá, čekám na dokončení...")
+                        return
+                except RuntimeError:
+                    # QObject už mohl být odstraněn, pokračujeme novým vláknem.
+                    pass
+                self.worker_thread = None
 
         self.progress_dialog = QProgressDialog("Zpracovávám data...", "Zrušit", 0, 0, self)
         self.progress_dialog.setWindowTitle("Načítání mapy")
@@ -2390,6 +2399,7 @@ class MainWindow(QMainWindow):
         self.worker.cache_mode.connect(self._on_worker_cache_mode)
         self.worker.points_ready.connect(self._on_points_ready)
         self.worker.error.connect(self._on_map_refresh_error)
+        self.worker.error.connect(self.worker_thread.quit)
         self.worker.finished.connect(self.worker_thread.quit)
         self.worker.finished.connect(self.worker.deleteLater)
         self.worker_thread.finished.connect(self.worker_thread.deleteLater)
