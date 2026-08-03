@@ -27,7 +27,7 @@ from geopy.distance import geodesic
 from geopy.extra.rate_limiter import RateLimiter
 from geopy.geocoders import Nominatim
 from PySide6.QtCore import QUrl, QThread, QObject, QTimer, Signal, Slot, Qt
-from PySide6.QtGui import QBrush, QColor, QDesktopServices, QIcon, QPainter, QPen, QPixmap, QPolygon
+from PySide6.QtGui import QBrush, QColor, QDesktopServices, QIcon, QPainter, QPalette, QPen, QPixmap, QPolygon
 from PySide6.QtWidgets import (
     QApplication,
     QFileDialog,
@@ -1177,6 +1177,159 @@ class MainWindow(QMainWindow):
         painter.end()
         self.setWindowIcon(QIcon(pixmap))
 
+    def _is_dark_palette(self) -> bool:
+        window_color = self.palette().color(QPalette.Window)
+        text_color = self.palette().color(QPalette.WindowText)
+        return window_color.lightness() < text_color.lightness()
+
+    def _button_style(
+        self,
+        background: str,
+        text: str,
+        border: str,
+        hover: str,
+        pressed: str,
+        disabled_background: str,
+        disabled_text: str,
+        disabled_border: str,
+        padding: str = "7px 10px",
+    ) -> str:
+        return (
+            "QPushButton {"
+            f"background-color:{background}; color:{text}; border:1px solid {border}; border-radius:7px; padding:{padding};"
+            "}"
+            f"QPushButton:hover {{ background-color:{hover}; }}"
+            f"QPushButton:pressed {{ background-color:{pressed}; }}"
+            f"QPushButton:disabled {{ background-color:{disabled_background}; color:{disabled_text}; border:1px solid {disabled_border}; }}"
+        )
+
+    def _apply_action_button_styles(self) -> None:
+        if self._is_dark_palette():
+            self.import_dips_button.setStyleSheet(
+                self._button_style(
+                    background="#1f3653",
+                    text="#cfe4ff",
+                    border="#3e5f89",
+                    hover="#274162",
+                    pressed="#2d4a6f",
+                    disabled_background="#1b2634",
+                    disabled_text="#6f8198",
+                    disabled_border="#304255",
+                )
+            )
+            self.delete_button.setStyleSheet(
+                self._button_style(
+                    background="#4a2525",
+                    text="#ffdede",
+                    border="#7a4242",
+                    hover="#5a2d2d",
+                    pressed="#683434",
+                    disabled_background="#312020",
+                    disabled_text="#a27a7a",
+                    disabled_border="#4a3434",
+                )
+            )
+            self.refresh_button.setStyleSheet(
+                self._button_style(
+                    background="#234230",
+                    text="#d7f1df",
+                    border="#3f6f51",
+                    hover="#2b5039",
+                    pressed="#315e43",
+                    disabled_background="#1d2f24",
+                    disabled_text="#7f9a87",
+                    disabled_border="#32483a",
+                )
+            )
+            self.show_all_button.setStyleSheet(
+                self._button_style(
+                    background="#2d3138",
+                    text="#d7dbe3",
+                    border="#4b5360",
+                    hover="#353b44",
+                    pressed="#3d444e",
+                    disabled_background="#24282f",
+                    disabled_text="#8a919d",
+                    disabled_border="#3c434f",
+                )
+            )
+            self.report_button.setStyleSheet(
+                self._button_style(
+                    background="#243a59",
+                    text="#d8e9ff",
+                    border="#486795",
+                    hover="#2c4568",
+                    pressed="#33517a",
+                    disabled_background="#202c3d",
+                    disabled_text="#8298b8",
+                    disabled_border="#3b4d67",
+                    padding="8px 10px",
+                )
+            )
+            return
+
+        self.import_dips_button.setStyleSheet(
+            self._button_style(
+                background="#e9f1fb",
+                text="#1f5ea8",
+                border="#9dbbe0",
+                hover="#dbe8f8",
+                pressed="#cfdef3",
+                disabled_background="#f3f6fb",
+                disabled_text="#8fa2bb",
+                disabled_border="#d2ddeb",
+            )
+        )
+        self.delete_button.setStyleSheet(
+            self._button_style(
+                background="#fbecec",
+                text="#8a2f2f",
+                border="#e5b1b1",
+                hover="#f7dddd",
+                pressed="#f2cfcf",
+                disabled_background="#fcf4f4",
+                disabled_text="#b59292",
+                disabled_border="#efd9d9",
+            )
+        )
+        self.refresh_button.setStyleSheet(
+            self._button_style(
+                background="#eaf6ee",
+                text="#2f6e45",
+                border="#add4b8",
+                hover="#dcf0e3",
+                pressed="#cde8d7",
+                disabled_background="#f2f8f4",
+                disabled_text="#8ea796",
+                disabled_border="#d1e2d6",
+            )
+        )
+        self.show_all_button.setStyleSheet(
+            self._button_style(
+                background="#f4f5f7",
+                text="#354052",
+                border="#cdd3db",
+                hover="#eceff3",
+                pressed="#e4e8ed",
+                disabled_background="#f7f8fa",
+                disabled_text="#9aa3b1",
+                disabled_border="#e2e6ec",
+            )
+        )
+        self.report_button.setStyleSheet(
+            self._button_style(
+                background="#edf4ff",
+                text="#214f93",
+                border="#b1c7ea",
+                hover="#e0ecff",
+                pressed="#d4e4fd",
+                disabled_background="#f3f7ff",
+                disabled_text="#8ca3c8",
+                disabled_border="#d4def1",
+                padding="8px 10px",
+            )
+        )
+
     def show_empty_map(self) -> None:
         self.data.build_map([])
         self.data.map_meta = {}
@@ -1253,6 +1406,8 @@ class MainWindow(QMainWindow):
         self.about_button = QPushButton("O programu")
         self.about_button.clicked.connect(self.show_about_dialog)
 
+        self._apply_action_button_styles()
+
         self.failed_locations_toggle_button = QPushButton("Negeokódované řádky (0) [+]")
         self.failed_locations_toggle_button.setCheckable(True)
         self.failed_locations_toggle_button.setEnabled(False)
@@ -1294,7 +1449,7 @@ class MainWindow(QMainWindow):
         side_layout = QVBoxLayout()
         self.school_info_label = QLabel(self._build_school_info_text())
         self.school_info_label.setWordWrap(True)
-        self.school_info_label.setStyleSheet("color:#2d3e50; background:#f5f7fa; border:1px solid #dfe5ef; padding:8px; border-radius:8px; margin-bottom:10px;")
+        self.school_info_label.setStyleSheet("color:#4a2f2f; background:#fff4f4; border:1px solid #edcdcd; padding:8px; border-radius:8px; margin-bottom:10px;")
         side_layout.addWidget(self.school_info_label)
         side_layout.addWidget(self.import_dips_button)
         side_layout.addWidget(self.obor_filter_toggle_button)
@@ -2300,7 +2455,7 @@ class MainWindow(QMainWindow):
         self.file_list.clear()
         files = self.data.list_files()
         if not files:
-            self.file_list.addItem("Žádné nahrané soubory.")
+            self.file_list.addItem("Žádné nahrané soubory. Pro nahrání souboru klikněte na \"Import DiPSy souboru\".")
             self._update_filter_ui()
             return
         for info in files:
