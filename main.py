@@ -61,7 +61,7 @@ CONFIG_FILE = BASE_DIR / "config.ini"
 MAP_FILE = STORAGE_DIR / "map.html"
 REPORTS_DIR = STORAGE_DIR / "reports"
 UPDATES_DIR = STORAGE_DIR / "updates"
-APP_VERSION = "1.01"
+APP_VERSION = "1.02"
 APP_YEAR = "2026"
 APP_GITHUB_URL = "https://github.com/michalsiman/mapa_uchazecu_o_studium"
 
