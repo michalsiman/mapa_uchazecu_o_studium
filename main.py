@@ -502,10 +502,7 @@ class DataStorage:
         home_primary = self._primary_name_part(self.home_school_address)
         name_match = False
         if requested_primary and home_primary:
-            if requested_primary == home_primary:
-                name_match = True
-            elif min(len(requested_primary), len(home_primary)) >= 8:
-                name_match = requested_primary in home_primary or home_primary in requested_primary
+            name_match = requested_primary == home_primary
 
         if not street_match and not name_match:
             return None
@@ -773,7 +770,28 @@ class DataStorage:
             return alias_location
 
         if key in self.location_cache:
-            return tuple(self.location_cache[key])
+            cached_coords = tuple(self.location_cache[key])
+
+            # Ochrana proti historicky špatně uloženým aliasům na domácí školu.
+            if self.home_school_address:
+                home_location = self.lookup_query(self.home_school_address)
+                if home_location is not None:
+                    lat_diff = abs(float(cached_coords[0]) - float(home_location[0]))
+                    lng_diff = abs(float(cached_coords[1]) - float(home_location[1]))
+                    if lat_diff <= 1e-7 and lng_diff <= 1e-7:
+                        # Pokud záznam není podle aktuálních pravidel alias domácí školy,
+                        # vynechá se stará cache a provede se nové geokódování.
+                        if self._resolve_home_school_alias_location(address, psc) is None:
+                            self.location_cache.pop(key, None)
+                            self._save_cache()
+                        else:
+                            return cached_coords
+                    else:
+                        return cached_coords
+                else:
+                    return cached_coords
+            else:
+                return cached_coords
 
         queries: list[str] = []
         address_text = str(address or "").strip()
