@@ -2386,7 +2386,10 @@ class MainWindow(QMainWindow):
             current = max(0, min(self._progress_current, self._progress_total))
             self.progress_dialog.setRange(0, self._progress_total)
             self.progress_dialog.setValue(current)
-            self.progress_dialog.setLabelText(f"{base_message}\n{current}/{self._progress_total}")
+            if re.search(r"\b\d+\s*/\s*\d+\b", base_message):
+                self.progress_dialog.setLabelText(base_message)
+            else:
+                self.progress_dialog.setLabelText(f"{base_message}\n{current}/{self._progress_total}")
         else:
             self.progress_dialog.setRange(0, 0)
             self.progress_dialog.setLabelText(base_message)
