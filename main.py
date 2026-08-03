@@ -1531,40 +1531,64 @@ class MainWindow(QMainWindow):
             "User-Agent": "mapa-uchazecu-update-check",
         }
         latest_api = f"https://api.github.com/repos/{slug}/releases/latest"
+        releases_api = f"https://api.github.com/repos/{slug}/releases?per_page=1"
         tags_api = f"https://api.github.com/repos/{slug}/tags?per_page=1"
 
         latest_version: str | None = None
         download_url: str | None = None
         release_url = APP_GITHUB_URL
 
+        def _parse_version_text(value: str) -> str | None:
+            text = str(value or "").strip()
+            if not text:
+                return None
+            normalized = text.lstrip("vV")
+            if re.fullmatch(r"\d+(?:\.\d+)*", normalized):
+                return normalized
+            match = re.search(r"\d+(?:\.\d+)+", text)
+            return match.group(0) if match else None
+
+        def _extract_release_info(payload: dict[str, Any]) -> tuple[str | None, str | None, str]:
+            tag_name = str(payload.get("tag_name") or "").strip()
+            release_name = str(payload.get("name") or "").strip()
+            parsed_version = _parse_version_text(tag_name) or _parse_version_text(release_name)
+            parsed_release_url = str(payload.get("html_url") or APP_GITHUB_URL)
+
+            parsed_download_url: str | None = None
+            assets = payload.get("assets") or []
+            if assets and isinstance(assets, list):
+                first_asset = assets[0] or {}
+                parsed_download_url = str(first_asset.get("browser_download_url") or "").strip() or None
+            if not parsed_download_url:
+                zipball = str(payload.get("zipball_url") or "").strip()
+                parsed_download_url = zipball or None
+
+            return parsed_version, parsed_download_url, parsed_release_url
+
         try:
             req = urllib.request.Request(latest_api, headers=headers)
             with urllib.request.urlopen(req, timeout=10) as response:
                 payload = json.loads(response.read().decode("utf-8"))
-            tag_name = str(payload.get("tag_name") or "").strip()
-            latest_version = tag_name.lstrip("vV") if tag_name else None
-            release_url = str(payload.get("html_url") or APP_GITHUB_URL)
-
-            assets = payload.get("assets") or []
-            if assets and isinstance(assets, list):
-                first_asset = assets[0] or {}
-                download_url = str(first_asset.get("browser_download_url") or "").strip() or None
-
-            if not download_url:
-                zipball = str(payload.get("zipball_url") or "").strip()
-                download_url = zipball or None
+            latest_version, download_url, release_url = _extract_release_info(payload)
         except urllib.error.HTTPError as exc:
             if exc.code == 404:
                 try:
-                    req = urllib.request.Request(tags_api, headers=headers)
+                    req = urllib.request.Request(releases_api, headers=headers)
                     with urllib.request.urlopen(req, timeout=10) as response:
-                        tags_payload = json.loads(response.read().decode("utf-8"))
-                    if isinstance(tags_payload, list) and tags_payload:
-                        first_tag = tags_payload[0] or {}
-                        tag_name = str(first_tag.get("name") or "").strip()
-                        latest_version = tag_name.lstrip("vV") if tag_name else None
-                        release_url = f"https://github.com/{slug}/tags"
-                        download_url = f"https://github.com/{slug}/archive/refs/tags/{tag_name}.zip" if tag_name else None
+                        releases_payload = json.loads(response.read().decode("utf-8"))
+                    if isinstance(releases_payload, list) and releases_payload:
+                        first_release = releases_payload[0] or {}
+                        latest_version, download_url, release_url = _extract_release_info(first_release)
+                    else:
+                        req = urllib.request.Request(tags_api, headers=headers)
+                        with urllib.request.urlopen(req, timeout=10) as response:
+                            tags_payload = json.loads(response.read().decode("utf-8"))
+                        if isinstance(tags_payload, list) and tags_payload:
+                            first_tag = tags_payload[0] or {}
+                            tag_name = str(first_tag.get("name") or "").strip()
+                            latest_version = _parse_version_text(tag_name)
+                            release_url = f"https://github.com/{slug}/tags"
+                            download_url = f"https://github.com/{slug}/archive/refs/tags/{tag_name}.zip" if tag_name else None
                 except Exception:
                     return {
                         "has_update": False,
@@ -1593,7 +1617,7 @@ class MainWindow(QMainWindow):
         if not latest_version:
             return {
                 "has_update": False,
-                "status": "Verzi na GitHubu se nepodařilo zjistit.",
+                "status": "Na GitHubu zatím není vydaná verze (release/tag).",
                 "latest_version": None,
                 "download_url": download_url,
                 "release_url": release_url,
